@@ -28,7 +28,7 @@ window.onload = () => {
     // Updates the index of the current page and moves the content accordingly.
     const updatePosition = (curIndex) => {
         index = curIndex < 0 ? 0 : curIndex >= maxIndex ? maxIndex : curIndex;
-        container.style.transform = "translateX(-" + (index * CONTAINER_WIDTH) + "px)";
+        container.style.transform = `translateX(${-(index * CONTAINER_WIDTH)}px)`;
         updateButtons();
     };
 
@@ -59,8 +59,13 @@ window.onload = () => {
         if (!moveContext.mousedown) {
             return;
         }
-        moveContext.curPos = index * CONTAINER_WIDTH - (getPageX(e) - moveContext.downPos);
-        container.style.transform = "translateX(-" + moveContext.curPos + "px)";
+        const base = index * CONTAINER_WIDTH;
+        const pos = base - (getPageX(e) - moveContext.downPos);
+        const limit = base + (CONTAINER_WIDTH / 3) * (pos >= 0 ? 1 : -1);
+
+        // move to new position or limit movement if on the leftmost / rightmost side
+        moveContext.curPos = (index >= maxIndex && pos > limit) || (index <= 0 && pos < limit) ? limit : pos;
+        container.style.transform = `translateX(${-(moveContext.curPos)}px)`;
     });
 
     addEL(document.documentElement, "mouseup touchend", (e) => {
