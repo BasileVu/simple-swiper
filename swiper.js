@@ -1,3 +1,10 @@
+// Shorthand to add multiple event listeners in an easier way.
+const addEL = (el, events, callback) => events.trim().split(" ").forEach(e => el.addEventListener(e, callback));
+
+// Shorthand to get offset to left of the page using an event
+const getPageX = (event) => event.pageX || (event.touches && event.touches[0] && event.touches[0].pageX) || 0;
+
+
 window.onload = () => {
     const CONTAINER_WIDTH = 242; // width of .container showing a page
     const N_PAGES = 6; // number of pages
@@ -9,64 +16,78 @@ window.onload = () => {
 
     let index = 0;
     const maxIndex = N_PAGES - 1;
-    let mousedown = false;
-    let mouseDownPos = 0;
-    let curPos = 0;
+    const moveContext = {mouseDown: false, downPos: 0, curPos: 0};
 
+
+    // Updates the state of the buttons
     const updateButtons = () => {
         leftButton.disabled = index <= 0;
         rightButton.disabled = index >= maxIndex;
     };
 
+    // Updates the index of the current page and moves the content accordingly.
     const updatePosition = (curIndex) => {
         index = curIndex < 0 ? 0 : curIndex >= maxIndex ? maxIndex : curIndex;
         container.style.transform = "translateX(-" + (index * CONTAINER_WIDTH) + "px)";
         updateButtons();
     };
 
+
+    // Buttons navigation
+    const addButtonEL = (button, indexOp) => addEL(button, "click touchstart", (e) => {
+        e.preventDefault();
+        updatePosition(indexOp());
+    });
+
+    addButtonEL(leftButton, () => index - 1);
+    addButtonEL(rightButton, () => index + 1);
+
     updateButtons();
-    leftButton.addEventListener("click", () => updatePosition(index - 1));
-    rightButton.addEventListener("click", () => updatePosition(index + 1));
 
-    content.addEventListener("mousedown", (e) => {
-        mousedown = true;
+
+    // Drag navigation
+
+    addEL(content, "mousedown touchstart", (e) => {
+        e.preventDefault();
+        moveContext.mousedown = true;
+        moveContext.downPos = getPageX(e);
         content.classList.add("grabbing");
-        mouseDownPos = e.pageX;
     });
 
-    content.addEventListener("mousemove", (e) => {
-        if (!mousedown) {
+    addEL(content, "mousemove touchmove", (e) => {
+        e.preventDefault();
+        if (!moveContext.mousedown) {
             return;
         }
-        curPos = index * CONTAINER_WIDTH - (e.pageX - mouseDownPos);
-        container.style.transform = "translateX(-" + curPos + "px)";
+        moveContext.curPos = index * CONTAINER_WIDTH - (getPageX(e) - moveContext.downPos);
+        container.style.transform = "translateX(-" + moveContext.curPos + "px)";
     });
 
-    // listen to mouseup on body to trigger it if user moves the mouse outside after a click on the container
-    document.documentElement.addEventListener("mouseup", (e) => {
-        // if mouse wan't pressed inside the container
-        if (!mousedown) {
+    addEL(document.documentElement, "mouseup touchend", (e) => {
+        e.preventDefault();
+        if (!moveContext.mousedown) {
             return;
         }
 
-        mousedown = false;
+        moveContext.mousedown = false;
         content.classList.remove("grabbing");
 
         // don't do anything if cursor didn't move / came back where it did a mouse down
-        if (mouseDownPos === e.pageX) {
+        if (moveContext.downPos === getPageX(e)) {
             return;
         }
 
         // change the index on the nearest page, using the left of a page as a landmark
         const lastPos = index * CONTAINER_WIDTH;
         const middle = CONTAINER_WIDTH / 2;
-        const diff = curPos - lastPos;
+        const diff = moveContext.curPos - lastPos;
 
-        if (diff > middle) { // set next page as current
+        // update page accordingly
+        if (diff > middle) {
             updatePosition(index + 1)
-        } else if (diff < -middle) { // set previous page as current
+        } else if (diff < -middle) {
             updatePosition(index - 1)
-        } else { // stay on current page
+        } else {
             updatePosition(index);
         }
     });
