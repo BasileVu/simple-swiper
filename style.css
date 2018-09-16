@@ -21,6 +21,10 @@ h2 {
     align-items: center;
 }
 
+button:not(:disabled) {
+    cursor: pointer;
+}
+
 .content {
     width: 242px;
     border: 1px solid #dadada;
@@ -32,8 +36,8 @@ h2 {
     cursor: grabbing;
 }
 
-button:not(:disabled) {
-    cursor: pointer;
+.content.grabbing .card-container {
+    transition: none;
 }
 
 .card-container {
@@ -83,5 +87,4 @@ button:not(:disabled) {
 
 .gray {
     background-color: darkgray;
-    margin-right: 0;
 }

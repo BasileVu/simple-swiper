@@ -61,10 +61,12 @@ window.onload = () => {
         }
         const base = index * CONTAINER_WIDTH;
         const pos = base - (getPageX(e) - moveContext.downPos);
-        const limit = base + (CONTAINER_WIDTH / 3) * (pos >= 0 ? 1 : -1);
+        const limit = CONTAINER_WIDTH / 3;
 
         // move to new position or limit movement if on the leftmost / rightmost side
-        moveContext.curPos = (index >= maxIndex && pos > limit) || (index <= 0 && pos < limit) ? limit : pos;
+        moveContext.curPos =
+            index >= maxIndex && pos > base + limit ? base + limit :
+            index <= 0 && pos < base - limit ? base - limit : pos;
         container.style.transform = `translateX(${-(moveContext.curPos)}px)`;
     });
 
